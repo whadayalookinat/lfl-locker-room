@@ -1,0 +1,4 @@
+# Username login is deliberately public so unauthenticated members can sign in.
+# It validates credentials inside the Edge Function and applies DB throttling.
+[functions.username-login]
+verify_jwt = false
