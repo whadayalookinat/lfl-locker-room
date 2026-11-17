@@ -10,7 +10,7 @@ Source: private `whadayalookinat/LFL/data/lfl_roster.csv` (read-only). Eligible 
 | `leslie` | Leslie-Panthers | Carolina Panthers |
 | `cb` | CB-Bengals | Cincinnati Bengals |
 | `davey` | Davey-Browns | Cleveland Browns |
-| `michelle` | Michelle-Cowboys | Dallas Cowboys |
+| `michellem` | Michelle-Cowboys | Dallas Cowboys |
 | `christy` | Christy-Lions | Detroit Lions |
 | `doug` | Doug-Packers | Green Bay Packers |
 | `marina` | Marina-Colts | Indianapolis Colts |
@@ -18,7 +18,7 @@ Source: private `whadayalookinat/LFL/data/lfl_roster.csv` (read-only). Eligible 
 | `ray` | Ray-Jaguars | Jacksonville Jaguars |
 | `susan` | Susan-Jaguars | Jacksonville Jaguars |
 | `dave` | Dave-Chiefs | Kansas City Chiefs |
-| `michelle2` | Michelle-Chiefs | Kansas City Chiefs |
+| `michelleb` | Michelle-Chiefs | Kansas City Chiefs |
 | `corey` | Corey-Raiders | Las Vegas Raiders |
 | `tom` | Tom-Chargers | Los Angeles Chargers |
 | `chris` | Chris-Dolphins | Miami Dolphins |
