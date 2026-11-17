@@ -31,7 +31,7 @@ begin
     return query select false, 'throttled'::text; return;
   end if;
   -- Only one authentication request per username at a time.
-  -- Reservation expires after 20 seconds if an Edge Function crashes.
+  -- Reservation expires after 60 seconds if an Edge Function crashes.
   if v_gate.reservation_id is not null and v_gate.reserved_until > now() then
     return query select false, 'busy'::text; return;
   end if;
@@ -41,7 +41,7 @@ begin
       window_count = case when window_started_at <= now()-interval '5 minutes'
        then 1 else window_count+1 end,
       reservation_id=p_reservation,
-      reserved_until=now()+interval '20 seconds',
+      reserved_until=now()+interval '60 seconds',
       updated_at=now()
   where username=p_username;
   return query select true, 'admitted'::text;
