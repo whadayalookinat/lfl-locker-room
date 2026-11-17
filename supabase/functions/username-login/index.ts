@@ -1,4 +1,4 @@
-// Username/password login pilot. Deploy only after server-side rate limiting is configured.
+// Username/password login pilot. Requires migration 005; IP-level throttling still pending.
 // Never expose the service-role credential in browser code.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 const ORIGIN='https://whadayalookinat.github.io';
@@ -19,10 +19,19 @@ Deno.serve(async req=>{
  const {data:profile,error:profileError}=await admin.from('league_members').select('user_id,is_active').eq('username',username).maybeSingle();
  if(profileError)return respond(500,{error:'Unable to sign in'});
  if(!profile?.is_active)return respond(401,{error:'Invalid username or password'});
+ const {data:limit,error:limitError}=await admin.rpc('login_limit_status',{p_user_id:profile.user_id});
+ if(limitError||!limit?.length)return respond(503,{error:'Login temporarily unavailable'});
+ if(!limit[0].allowed)return respond(429,{error:'Too many failed attempts. Try again later.'});
  const {data:authUser,error:userError}=await admin.auth.admin.getUserById(profile.user_id);
  if(userError||!authUser.user?.email)return respond(401,{error:'Invalid username or password'});
  const client=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:session,error:signInError}=await client.auth.signInWithPassword({email:authUser.user.email,password});
- if(signInError||!session.session)return respond(401,{error:'Invalid username or password'});
+ if(signInError||!session.session){
+   const {error:failureError}=await admin.rpc('record_login_failure',{p_user_id:profile.user_id});
+   if(failureError)return respond(503,{error:'Login temporarily unavailable'});
+   return respond(401,{error:'Invalid username or password'});
+ }
+ const {error:clearError}=await admin.rpc('clear_login_failures',{p_user_id:profile.user_id});
+ if(clearError)return respond(503,{error:'Login temporarily unavailable'});
  return respond(200,{access_token:session.session.access_token,refresh_token:session.session.refresh_token});
 });
