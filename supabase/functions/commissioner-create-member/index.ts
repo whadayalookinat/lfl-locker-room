@@ -34,11 +34,11 @@ Deno.serve(async (req) => {
   const username = String(payload.username ?? '').trim().toLowerCase();
   const displayName = String(payload.display_name ?? '').trim();
   const firstName = String(payload.first_name ?? '').trim();
-  const email = String(payload.email ?? '').trim().toLowerCase();
+  // Random internal email, independent of editable username and never shown to participants.
+  const email = `${crypto.randomUUID()}@locker-room.invalid`;
   const password = String(payload.password ?? '');
   if (!/^[a-z0-9_]{3,30}$/.test(username)) return reply(400, { error: 'Username must be 3–30 lowercase letters, numbers or underscores' });
   if (!displayName || displayName.length > 50 || firstName.length > 50) return reply(400, { error: 'Invalid display name or first name' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return reply(400, { error: 'Valid email required for this pilot' });
   if (password.length < 12 || password.length > 128) return reply(400, { error: 'Password must be 12–128 characters' });
   const { data: existing, error: lookupError } = await admin.from('league_members').select('user_id').eq('username', username).maybeSingle();
   if (lookupError) return reply(500, { error: 'Unable to check username' });
