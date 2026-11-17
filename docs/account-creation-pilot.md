@@ -28,3 +28,13 @@
 4. Verify the new password works and the old password fails for new logins; separately test whether previously issued sessions remain active.
 5. Verify the function rejects commissioner targets and the caller's own account.
 6. Avoid printing, logging, committing, or sharing passwords in chat.
+
+## Login lockout implementation (prepared, not applied)
+- Run `supabase/migrations/005_login_limits.sql` in Supabase SQL Editor before deploying login or unlock Edge Functions.
+- `username-login` calls service-role-only RPCs to check account lockout, record a failed password, and clear failures after successful authentication.
+- At 10 consecutive failed passwords, the account locks for 30 minutes; the next failed attempt after expiration begins a fresh counter. Commissioner accounts are exempt from this account-specific lockout to avoid denial of service.
+- `commissioner-unlock` validates the active commissioner's session and clears a selected non-commissioner account's counter by permanent UUID.
+- **Before deployment:** Add edge/IP-level throttling for unknown usernames and high-volume requests. Current account counters alone do not throttle nonexistent usernames and cannot fully prevent parallel login attempts that race the pre-check. Add atomic reservation or request serialization before claiming a strict maximum of ten attempts under concurrency.
+- Check Supabase's Auth email validation for `@locker-room.invalid` before any account creation.
+- Test 9 failures, 10th failure, 11th attempt (429), automatic unlock after 30 minutes, commissioner unlock, success resets counter, ordinary member forbidden from unlock, and commissioner lockout exemption.
+- These functions have not been deployed or executed against Supabase. No real accounts or passwords changed.
