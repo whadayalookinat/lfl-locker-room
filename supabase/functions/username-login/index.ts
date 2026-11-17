@@ -2,6 +2,9 @@
 // Service-role credentials stay in Edge Functions environment, never the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 const ORIGIN='https://whadayalookinat.github.io';
+// Abort each network operation after 8 seconds. The 60-second reservation
+// provides headroom for the full multi-step login flow and cleanup.
+const timedFetch: typeof fetch = (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(8000) });
 const cors={'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Headers':'apikey,content-type,x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};
 function respond(status:number,body:Record<string,unknown>){return new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});}
 Deno.serve(async req=>{
@@ -15,7 +18,7 @@ Deno.serve(async req=>{
  if(!/^[a-z0-9_]{3,30}$/.test(username)||!password||password.length>128)return respond(401,{error:'Invalid username or password'});
  const url=Deno.env.get('SUPABASE_URL'),anon=Deno.env.get('SUPABASE_ANON_KEY'),secret=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
  if(!url||!anon||!secret)return respond(500,{error:'Server configuration incomplete'});
- const admin=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
+ const admin=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:timedFetch}});
  const reservation=crypto.randomUUID();
  const {data:admission,error:admissionError}=await admin.rpc('reserve_username_login',{p_username:username,p_reservation:reservation});
  if(admissionError||!admission?.length)return respond(503,{error:'Login temporarily unavailable'});
@@ -29,7 +32,7 @@ Deno.serve(async req=>{
   if(!limit[0].allowed)return respond(429,{error:'Too many login attempts. Please try again shortly.'});
   const {data:authUser,error:userError}=await admin.auth.admin.getUserById(profile.user_id);
   if(userError||!authUser.user?.email)return respond(401,{error:'Invalid username or password'});
-  const client=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
+  const client=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:timedFetch}});
   const {data:session,error:signInError}=await client.auth.signInWithPassword({email:authUser.user.email,password});
   if(signInError||!session.session){
    const {error:failureError}=await admin.rpc('record_login_failure',{p_user_id:profile.user_id});
@@ -39,8 +42,11 @@ Deno.serve(async req=>{
   const {error:clearError}=await admin.rpc('clear_login_failures',{p_user_id:profile.user_id});
   if(clearError)return respond(503,{error:'Login temporarily unavailable'});
   return respond(200,{access_token:session.session.access_token,refresh_token:session.session.refresh_token});
+ }catch(error){
+  console.error('Username login request failed', error instanceof Error ? error.name : 'unknown');
+  return respond(503,{error:'Login temporarily unavailable'});
  }finally{
-  // If the function crashes, reservation expires after 20 seconds.
+  // If the function crashes, reservation expires after 60 seconds.
   const {error:releaseError}=await admin.rpc('release_username_login',{p_username:username,p_reservation:reservation});
   if(releaseError)console.error('Login reservation release failed');
  }
