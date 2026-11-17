@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Locker Room — Username Login Pilot</title><link rel="stylesheet" href="style.css">
+<style>.hidden{display:none!important}.status{padding:12px;border-radius:8px;background:#edf3f8;margin:12px 0;white-space:pre-wrap}.status.error{background:#ffe8e8;color:#9e1822}.hint{font-size:14px}.actions{margin-top:14px}</style></head>
+<body><main class="wrap"><header class="hero"><small>LFL • USERNAME LOGIN PILOT</small><h1>🏈 Loser's Locker Room</h1><p>v0.6 username/password sign-in test</p><strong class="tag">TEST PAGE • NOT THE MAIN SITE</strong></header>
+<section class="panel"><p class="hint">Use an existing test account. No signup is available. Never share your password in chat.</p>
+<div id="status" class="status" role="status" aria-live="polite">Checking existing session…</div>
+<div id="login-view" class="hidden"><h2>Member sign-in</h2><form id="login-form"><label for="username">Username</label><input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><div class="actions"><button id="login-button" type="submit">Log in</button></div></form></div>
+<div id="member-view" class="hidden"><h2>Welcome, <span id="display-name"></span>!</h2><p id="member-details"></p><div class="actions"><button id="logout" type="button">Log out</button></div></div></section>
+<footer><a href="auth-test.html">Existing email-login test</a> · Pilot only · No public registration</footer></main>
+<script type="module" src="username-login-test.js"></script></body></html>
