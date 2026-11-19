@@ -7,7 +7,7 @@ function status(message,error=false){$('status').textContent=message;$('status')
 let targetId=null;
 async function initialize(){
  const {data:{user},error}=await client.auth.getUser();
- if(error||!user){status('Sign in as doug on the username-login page, then return here.',true);return;}
+ if(error||!user){status('Sign in with a commissioner account on the username-login page, then return here.',true);return;}
  const {data:me,error:meError}=await client.from('league_members').select('username,is_active,is_commissioner').eq('user_id',user.id).maybeSingle();
  if(meError||!me?.is_active||!me.is_commissioner){status('Commissioner access required.',true);return;}
  const {data:target,error:targetError}=await client.from('league_members').select('user_id,username,is_commissioner').eq('username','testplayer2').maybeSingle();
