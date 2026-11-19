@@ -45,8 +45,11 @@ function teamColors(name){return TEAM_COLORS[name]||TEAM_COLORS[TEAM_ALIASES[nam
 for(let n=1;n<=18;n++){const option=document.createElement('option');option.value=String(n);option.textContent='Week '+n;$('week').append(option);}
 $('week').value='11';
 function note(s,error=false){$('status').textContent=s;$('status').classList.toggle('error',error);$('status').classList.toggle('success',!error);}
-function showLogin(s='Please sign in.'){profile=null;user=null;$('login-view').classList.remove('hidden');$('member-view').classList.add('hidden');note(s);}
+function showLogin(s='Please sign in.'){profile=null;user=null;$('latest-link').classList.add('hidden');$('top-link').classList.add('hidden');$('login-view').classList.remove('hidden');$('member-view').classList.add('hidden');note(s);}
+function jumpToLatest(){const last=$('messages').querySelector('.message:last-child');if(last)last.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
+$('latest-link').addEventListener('click',e=>{e.preventDefault();jumpToLatest();});
 async function loadComments(){
+ $('latest-link').classList.add('hidden');$('top-link').classList.add('hidden');
  $('messages').replaceChildren();
  const {data,error}=await db.from('comments').select('id,author_id,body,created_at').eq('season',2026).eq('week',Number($('week').value)).order('created_at',{ascending:true});
  if(error){note('Could not load comments: '+error.message,true);return;}
@@ -74,6 +77,7 @@ async function loadComments(){
   if(profile.is_commissioner){const controls=document.createElement('div');controls.className='comment-actions';const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent='Delete';remove.addEventListener('click',async()=>{if(!confirm('Delete this comment?'))return;remove.disabled=true;const {data:deleted,error}=await db.from('comments').delete().eq('id',c.id).select('id');if(error||deleted?.length!==1){note('Delete failed or not authorized: '+(error?.message||'No row deleted'),true);remove.disabled=false;}else{note('Comment deleted.');await loadComments();}});controls.append(remove);article.append(controls);}
   $('messages').append(article);
  }
+ $('latest-link').classList.remove('hidden');$('top-link').classList.remove('hidden');
 }
 async function refresh(){
  const {data:{user:identity},error}=await db.auth.getUser();
@@ -111,6 +115,6 @@ $('comment-form').addEventListener('submit',async e=>{
  const button=$('post-button');button.disabled=true;
  const {error}=await db.from('comments').insert({author_id:user.id,season:2026,week:Number($('week').value),body});
  button.disabled=false;if(error){note('Post failed: '+error.message,true);return;}
- $('comment').value='';$('remaining').textContent='280 characters remaining';note('Comment posted.');await loadComments();
+ $('comment').value='';$('remaining').textContent='280 characters remaining';note('Comment posted.');await loadComments();jumpToLatest();
 });
 refresh().catch(()=>showLogin('Could not verify saved session.'));
