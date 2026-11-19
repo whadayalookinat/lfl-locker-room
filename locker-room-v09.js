@@ -69,7 +69,7 @@ async function loadComments(){
   const author=document.createElement('strong');author.textContent=names.get(c.author_id)||'Former member';
   const time=document.createElement('span');time.className='time';time.textContent=new Date(c.created_at).toLocaleString();
   meta.append(author);
-  if(colors){const tag=document.createElement('span');tag.className='team-tag';tag.textContent=colors[2];tag.title=assigned;tag.style.setProperty('--team-primary',colors[0]);tag.style.setProperty('--team-secondary',colors[1]);meta.append(tag);}
+  if(colors){const tag=document.createElement('span');tag.className='team-tag';tag.textContent=assigned;tag.title=assigned;tag.style.setProperty('--team-primary',colors[0]);tag.style.setProperty('--team-secondary',colors[1]);meta.append(tag);}
   meta.append(time);const body=document.createElement('p');body.textContent=c.body;article.append(meta,body);
   if(profile.is_commissioner){const controls=document.createElement('div');controls.className='comment-actions';const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent='Delete';remove.addEventListener('click',async()=>{if(!confirm('Delete this comment?'))return;remove.disabled=true;const {data:deleted,error}=await db.from('comments').delete().eq('id',c.id).select('id');if(error||deleted?.length!==1){note('Delete failed or not authorized: '+(error?.message||'No row deleted'),true);remove.disabled=false;}else{note('Comment deleted.');await loadComments();}});controls.append(remove);article.append(controls);}
   $('messages').append(article);
