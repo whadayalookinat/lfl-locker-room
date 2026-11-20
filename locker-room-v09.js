@@ -52,11 +52,11 @@ async function loadComments(){
  $('latest-link').classList.add('hidden');$('top-link').classList.add('hidden');
  $('messages').replaceChildren();
  const {data,error}=await db.from('comments').select('id,author_id,body,created_at').eq('season',2026).eq('week',Number($('week').value)).order('created_at',{ascending:true});
- if(error){note('Could not load comments: '+error.message,true);return;}
- if(!data.length){const p=document.createElement('p');p.className='empty';p.textContent='No comments yet for this week.';$('messages').append(p);return;}
+ if(error){note('Could not load comments: '+error.message,true);return false;}
+ if(!data.length){const p=document.createElement('p');p.className='empty';p.textContent='No comments yet for this week.';$('messages').append(p);return true;}
  const ids=[...new Set(data.map(c=>c.author_id))];
  const {data:members,error:memberError}=await db.from('league_members').select('user_id,display_name').in('user_id',ids);
- if(memberError){note('Could not load author names: '+memberError.message,true);return;}
+ if(memberError){note('Could not load author names: '+memberError.message,true);return false;}
  const names=new Map((members||[]).map(m=>[m.user_id,m.display_name]));
  // Use the discussion season, not the member's latest assignment.
  const season=2026;
@@ -78,6 +78,7 @@ async function loadComments(){
   $('messages').append(article);
  }
  $('latest-link').classList.remove('hidden');$('top-link').classList.remove('hidden');
+ return true;
 }
 async function refresh(){
  const {data:{user:identity},error}=await db.auth.getUser();
@@ -108,7 +109,21 @@ $('login-form').addEventListener('submit',async e=>{
  finally{button.disabled=false;}
 });
 $('logout').addEventListener('click',async()=>{const {error}=await db.auth.signOut();if(error)note('Logout failed: '+error.message,true);else showLogin('Logged out.');});
-$('week').addEventListener('change',()=>{if(profile)loadComments();});
+$('refresh-comments').addEventListener('click',async()=>{
+ if(!profile)return;
+ const button=$('refresh-comments'),feedback=$('refresh-feedback');
+ button.disabled=true;button.textContent='Refreshing…';feedback.textContent='';
+ try{
+  const ok=await loadComments();
+  feedback.textContent=ok?'Comments updated.':'Could not refresh comments. Try again.';
+ }catch(error){
+  feedback.textContent='Could not refresh comments. Try again.';
+  note('Could not refresh comments: '+(error?.message||'Unknown error'),true);
+ }finally{
+  button.textContent='↻ Refresh comments';button.disabled=false;
+ }
+});
+$('week').addEventListener('change',()=>{if(profile){$('refresh-feedback').textContent='';loadComments();}});
 $('comment').addEventListener('input',()=>{$('remaining').textContent=(280-$('comment').value.length)+' characters remaining';});
 $('comment-form').addEventListener('submit',async e=>{
  e.preventDefault();if(!profile||!user)return;const body=$('comment').value.trim();if(!body||body.length>280)return;
