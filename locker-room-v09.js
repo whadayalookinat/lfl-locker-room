@@ -41,6 +41,19 @@ const TEAM_COLORS={
 };
 const TEAM_ALIASES={'LA Rams':'Los Angeles Rams','Oakland Raiders':'Las Vegas Raiders','Washington Football Team':'Washington Commanders','Washington Redskins':'Washington Commanders'};
 function teamColors(name){return TEAM_COLORS[name]||TEAM_COLORS[TEAM_ALIASES[name]]||null;}
+// Use the same published, completed-game records as the LFL standings page.
+// If that feed is unavailable, comments still render with their existing team badges.
+async function loadTeamRecords(){
+ try{
+  const response=await fetch('/lfl-site/lfl_state.json',{cache:'no-store',signal:AbortSignal.timeout(5000)});
+  if(!response.ok)return new Map();
+  const state=await response.json();
+  if(state.season_year!==2026||state.season_type!=='regular'||!Array.isArray(state.standings))return new Map();
+  return new Map(state.standings
+   .filter(row=>typeof row.team==='string'&&[row.wins,row.losses,row.ties].every(n=>Number.isInteger(n)&&n>=0))
+   .map(row=>[row.team,row.wins+'-'+row.losses+'-'+row.ties]));
+ }catch{return new Map();}
+}
 
 for(let n=1;n<=18;n++){const option=document.createElement('option');option.value=String(n);option.textContent='Week '+n;$('week').append(option);}
 $('week').value='11';
@@ -55,6 +68,7 @@ async function loadComments(){
  if(error){note('Could not load comments: '+error.message,true);return false;}
  if(!data.length){const p=document.createElement('p');p.className='empty';p.textContent='No comments yet for this week.';$('messages').append(p);return true;}
  const ids=[...new Set(data.map(c=>c.author_id))];
+ const teamRecordsPromise=loadTeamRecords();
  const {data:members,error:memberError}=await db.from('league_members').select('user_id,display_name').in('user_id',ids);
  if(memberError){note('Could not load author names: '+memberError.message,true);return false;}
  const names=new Map((members||[]).map(m=>[m.user_id,m.display_name]));
@@ -63,6 +77,7 @@ async function loadComments(){
  const {data:assignments,error:teamError}=await db.from('member_season_teams').select('user_id,team_name').eq('season',season).in('user_id',ids);
  if(teamError){note('Could not load team colors: '+teamError.message,true);}
  const assignedTeams=new Map((assignments||[]).map(a=>[a.user_id,a.team_name]));
+ const teamRecords=await teamRecordsPromise;
  for(const c of data){
   const article=document.createElement('article');article.className='message';
   const assigned=assignedTeams.get(c.author_id);
@@ -72,7 +87,7 @@ async function loadComments(){
   const author=document.createElement('strong');author.textContent=names.get(c.author_id)||'Former member';
   const time=document.createElement('span');time.className='time';time.textContent=new Date(c.created_at).toLocaleString();
   meta.append(author);
-  if(colors){const tag=document.createElement('span');tag.className='team-tag';tag.textContent=assigned;tag.title=assigned;tag.style.setProperty('--team-primary',colors[0]);tag.style.setProperty('--team-secondary',colors[1]);meta.append(tag);}
+  if(colors){const tag=document.createElement('span');tag.className='team-tag';const record=teamRecords.get(TEAM_ALIASES[assigned]||assigned);tag.textContent=assigned+(record?'  '+record:'');tag.title=assigned+(record?' · '+record:'');tag.style.setProperty('--team-primary',colors[0]);tag.style.setProperty('--team-secondary',colors[1]);meta.append(tag);}
   meta.append(time);const body=document.createElement('p');body.textContent=c.body;article.append(meta,body);
   if(profile.is_commissioner){const controls=document.createElement('div');controls.className='comment-actions';const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent='Delete';remove.addEventListener('click',async()=>{if(!confirm('Delete this comment?'))return;remove.disabled=true;const {data:deleted,error}=await db.from('comments').delete().eq('id',c.id).select('id');if(error||deleted?.length!==1){note('Delete failed or not authorized: '+(error?.message||'No row deleted'),true);remove.disabled=false;}else{note('Comment deleted.');await loadComments();}});controls.append(remove);article.append(controls);}
   $('messages').append(article);
