@@ -58,41 +58,66 @@ async function loadTeamRecords(){
 for(let n=1;n<=18;n++){const option=document.createElement('option');option.value=String(n);option.textContent='Week '+n;$('week').append(option);}
 $('week').value='11';
 function note(s,error=false){$('status').textContent=s;$('status').classList.toggle('error',error);$('status').classList.toggle('success',!error);}
-function showLogin(s='Please sign in.'){profile=null;user=null;$('latest-link').classList.add('hidden');$('top-link').classList.add('hidden');$('login-view').classList.remove('hidden');$('member-view').classList.add('hidden');note(s);}
-function jumpToLatest(){const last=$('messages').querySelector('.message:last-child');if(last)last.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
+function showLogin(s='Please sign in.'){profile=null;user=null;commentsRequest++;$('latest-link').classList.add('hidden');$('bottom-latest-link').classList.add('hidden');$('top-link').classList.add('hidden');$('login-view').classList.remove('hidden');$('member-view').classList.add('hidden');note(s);}
+function jumpToLatest(){
+ const pane=$('messages');
+ pane.scrollTo({top:pane.scrollHeight,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+}
+function jumpToFirst(){
+ $('messages').scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+}
 $('latest-link').addEventListener('click',e=>{e.preventDefault();jumpToLatest();});
-async function loadComments(){
- $('latest-link').classList.add('hidden');$('top-link').classList.add('hidden');
- $('messages').replaceChildren();
- const {data,error}=await db.from('comments').select('id,author_id,body,created_at').eq('season',2026).eq('week',Number($('week').value)).order('created_at',{ascending:true});
+$('bottom-latest-link').addEventListener('click',e=>{e.preventDefault();jumpToLatest();});
+$('top-link').addEventListener('click',e=>{e.preventDefault();jumpToFirst();});
+let commentsRequest=0;
+async function loadComments({scroll='preserve'}={}){
+ const pane=$('messages');
+ const week=Number($('week').value),request=++commentsRequest;
+ const previousTop=pane.scrollTop;
+ const wasAtBottom=pane.scrollHeight-pane.clientHeight-previousTop<=48;
+ const keepAtBottom=scroll==='bottom'||(scroll==='preserve'&&(wasAtBottom||!pane.querySelector('.message')));
+ // Keep the old conversation visible while refreshing. Replacing it early
+ // collapses the page and resets the user's scroll position.
+ const {data,error}=await db.from('comments').select('id,author_id,body,created_at').eq('season',2026).eq('week',week).order('created_at',{ascending:true});
+ if(request!==commentsRequest||week!==Number($('week').value))return false;
  if(error){note('Could not load comments: '+error.message,true);return false;}
- if(!data.length){const p=document.createElement('p');p.className='empty';p.textContent='No comments yet for this week.';$('messages').append(p);return true;}
- const ids=[...new Set(data.map(c=>c.author_id))];
- const teamRecordsPromise=loadTeamRecords();
- const {data:members,error:memberError}=await db.from('league_members').select('user_id,display_name').in('user_id',ids);
- if(memberError){note('Could not load author names: '+memberError.message,true);return false;}
- const names=new Map((members||[]).map(m=>[m.user_id,m.display_name]));
- // Use the discussion season, not the member's latest assignment.
- const season=2026;
- const {data:assignments,error:teamError}=await db.from('member_season_teams').select('user_id,team_name').eq('season',season).in('user_id',ids);
- if(teamError){note('Could not load team colors: '+teamError.message,true);}
- const assignedTeams=new Map((assignments||[]).map(a=>[a.user_id,a.team_name]));
- const teamRecords=await teamRecordsPromise;
- for(const c of data){
-  const article=document.createElement('article');article.className='message';
-  const assigned=assignedTeams.get(c.author_id);
-  const colors=teamColors(assigned);
-  if(colors){article.style.setProperty('--team-primary',colors[0]);article.style.setProperty('--team-secondary',colors[1]);}
-  const meta=document.createElement('div');meta.className='meta';
-  const author=document.createElement('strong');author.textContent=names.get(c.author_id)||'Former member';
-  const time=document.createElement('span');time.className='time';time.textContent=new Date(c.created_at).toLocaleString();
-  meta.append(author);
-  if(colors){const tag=document.createElement('span');tag.className='team-tag';const record=teamRecords.get(TEAM_ALIASES[assigned]||assigned);tag.textContent=assigned+(record?'  '+record:'');tag.title=assigned+(record?' · '+record:'');tag.style.setProperty('--team-primary',colors[0]);tag.style.setProperty('--team-secondary',colors[1]);meta.append(tag);}
-  meta.append(time);const body=document.createElement('p');body.textContent=c.body;article.append(meta,body);
-  if(profile.is_commissioner){const controls=document.createElement('div');controls.className='comment-actions';const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent='Delete';remove.addEventListener('click',async()=>{if(!confirm('Delete this comment?'))return;remove.disabled=true;const {data:deleted,error}=await db.from('comments').delete().eq('id',c.id).select('id');if(error||deleted?.length!==1){note('Delete failed or not authorized: '+(error?.message||'No row deleted'),true);remove.disabled=false;}else{note('Comment deleted.');await loadComments();}});controls.append(remove);article.append(controls);}
-  $('messages').append(article);
+ const comments=data||[];
+ const fragment=document.createDocumentFragment();
+ if(!comments.length){
+  const p=document.createElement('p');p.className='empty';p.textContent='No comments yet for this week.';fragment.append(p);
+ }else{
+  const ids=[...new Set(comments.map(c=>c.author_id))];
+  const teamRecordsPromise=loadTeamRecords();
+  const {data:members,error:memberError}=await db.from('league_members').select('user_id,display_name').in('user_id',ids);
+  if(request!==commentsRequest||week!==Number($('week').value))return false;
+  if(memberError){note('Could not load author names: '+memberError.message,true);return false;}
+  const names=new Map((members||[]).map(m=>[m.user_id,m.display_name]));
+  // Use the discussion season, not the member's latest assignment.
+  const {data:assignments,error:teamError}=await db.from('member_season_teams').select('user_id,team_name').eq('season',2026).in('user_id',ids);
+  if(request!==commentsRequest||week!==Number($('week').value))return false;
+  if(teamError)note('Could not load team colors: '+teamError.message,true);
+  const assignedTeams=new Map((assignments||[]).map(a=>[a.user_id,a.team_name]));
+  const teamRecords=await teamRecordsPromise;
+  if(request!==commentsRequest||week!==Number($('week').value))return false;
+  for(const c of comments){
+   const article=document.createElement('article');article.className='message';
+   const assigned=assignedTeams.get(c.author_id);
+   const colors=teamColors(assigned);
+   if(colors){article.style.setProperty('--team-primary',colors[0]);article.style.setProperty('--team-secondary',colors[1]);}
+   const meta=document.createElement('div');meta.className='meta';
+   const author=document.createElement('strong');author.textContent=names.get(c.author_id)||'Former member';
+   const time=document.createElement('span');time.className='time';time.textContent=new Date(c.created_at).toLocaleString();
+   meta.append(author);
+   if(colors){const tag=document.createElement('span');tag.className='team-tag';const record=teamRecords.get(TEAM_ALIASES[assigned]||assigned);tag.textContent=assigned+(record?'  '+record:'');tag.title=assigned+(record?' · '+record:'');tag.style.setProperty('--team-primary',colors[0]);tag.style.setProperty('--team-secondary',colors[1]);meta.append(tag);}
+   meta.append(time);const body=document.createElement('p');body.textContent=c.body;article.append(meta,body);
+   if(profile.is_commissioner){const controls=document.createElement('div');controls.className='comment-actions';const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent='Delete';remove.addEventListener('click',async()=>{if(!confirm('Delete this comment?'))return;remove.disabled=true;const {data:deleted,error}=await db.from('comments').delete().eq('id',c.id).select('id');if(error||deleted?.length!==1){note('Delete failed or not authorized: '+(error?.message||'No row deleted'),true);remove.disabled=false;}else{note('Comment deleted.');await loadComments();}});controls.append(remove);article.append(controls);}
+   fragment.append(article);
+  }
  }
- $('latest-link').classList.remove('hidden');$('top-link').classList.remove('hidden');
+ if(request!==commentsRequest||week!==Number($('week').value))return false;
+ pane.replaceChildren(fragment);
+ for(const id of ['latest-link','bottom-latest-link','top-link'])$(id).classList.toggle('hidden',!comments.length);
+ pane.scrollTop=keepAtBottom?pane.scrollHeight:scroll==='top'?0:previousTop;
  return true;
 }
 async function refresh(){
@@ -138,13 +163,13 @@ $('refresh-comments').addEventListener('click',async()=>{
   button.textContent='↻ Refresh comments';button.disabled=false;
  }
 });
-$('week').addEventListener('change',()=>{if(profile){$('refresh-feedback').textContent='';loadComments();}});
+$('week').addEventListener('change',()=>{if(profile){$('refresh-feedback').textContent='';loadComments({scroll:'bottom'});}});
 $('comment').addEventListener('input',()=>{$('remaining').textContent=(280-$('comment').value.length)+' characters remaining';});
 $('comment-form').addEventListener('submit',async e=>{
  e.preventDefault();if(!profile||!user)return;const body=$('comment').value.trim();if(!body||body.length>280)return;
  const button=$('post-button');button.disabled=true;
  const {error}=await db.from('comments').insert({author_id:user.id,season:2026,week:Number($('week').value),body});
  button.disabled=false;if(error){note('Post failed: '+error.message,true);return;}
- $('comment').value='';$('remaining').textContent='280 characters remaining';note('Comment posted.');await loadComments();jumpToLatest();
+ $('comment').value='';$('remaining').textContent='280 characters remaining';note('Comment posted.');await loadComments({scroll:'bottom'});
 });
 refresh().catch(()=>showLogin('Could not verify saved session.'));
