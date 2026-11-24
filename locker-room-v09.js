@@ -55,6 +55,32 @@ async function loadTeamRecords(){
  }catch{return new Map();}
 }
 
+// The LFL publisher freezes a completed-week JSON archive only after all
+// scheduled games (including MNF) are final. The next discussion week opens
+// on a new visit, never while someone is already reading a conversation.
+async function defaultDiscussionWeek(){
+ const fallback=11;
+ try{
+  const response=await fetch('/lfl-site/lfl_state.json',{cache:'no-store',signal:AbortSignal.timeout(5000)});
+  if(!response.ok)return fallback;
+  const current=await response.json();
+  if(current.season_year!==2026||current.season_type!=='regular'||
+     !Number.isInteger(current.through_week)||current.through_week<1||current.through_week>18)return fallback;
+  // The current report can already show the next week's games. Find the
+  // latest truly completed archive, rather than advancing on calendar time.
+  for(let week=current.through_week;week>=1;week--){
+   const archive=await fetch('/lfl-site/archive/2026/week-'+String(week).padStart(2,'0')+'.json',
+    {cache:'no-store',signal:AbortSignal.timeout(4000)});
+   if(archive.status===404)continue;
+   if(!archive.ok)return fallback;
+   const snapshot=await archive.json();
+   if(snapshot.season_year!==2026||snapshot.season_type!=='regular'||snapshot.through_week!==week)return fallback;
+   return Math.min(18,week+1);
+  }
+  return current.through_week;
+ }catch{return fallback;}
+}
+const initialWeekPromise=defaultDiscussionWeek();
 for(let n=1;n<=18;n++){const option=document.createElement('option');option.value=String(n);option.textContent='Week '+n;$('week').append(option);}
 $('week').value='11';
 function note(s,error=false){$('status').textContent=s;$('status').classList.toggle('error',error);$('status').classList.toggle('success',!error);}
@@ -131,6 +157,7 @@ async function refresh(){
  const {data:assignment,error:teamError}=await db.from('member_season_teams').select('team_name').eq('user_id',identity.id).eq('season',2026).maybeSingle();
  $('team-pill').textContent='2026 team: '+(teamError?'Unavailable':assignment?.team_name||'Unassigned');
  $('commissioner-nav').classList.toggle('hidden',!profile.is_commissioner);
+ $('week').value=String(await initialWeekPromise);
  $('login-view').classList.add('hidden');$('member-view').classList.remove('hidden');
  note('Signed in successfully.');await loadComments();
 }
