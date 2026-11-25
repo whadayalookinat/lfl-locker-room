@@ -2,9 +2,45 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Loser's Locker Room — 2026</title><link rel="stylesheet" href="style.css"><style>
 .hidden{display:none!important}.status{padding:12px;border-radius:8px;background:#edf3f8;margin:12px 0;white-space:pre-wrap}.status.error{background:#ffe8e8;color:#9e1822}.status.success{background:#e7f5eb;color:#176038}
 .topline{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.nav{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.nav a{padding:10px 13px;border-radius:8px;border:1px solid #bdc8d4;color:#243d58;text-decoration:none;font-weight:700}.nav a:hover{background:#edf3f8}.danger{background:#5d6975}.comment-actions{margin-top:10px}.week-control{display:flex;align-items:center;gap:10px}.week-control label{margin:0}.week-control select{width:auto}.intro{line-height:1.5;color:#566575}.tagline{display:flex;gap:8px;flex-wrap:wrap}.pill{border-radius:99px;background:#e8edf4;padding:6px 10px;font-size:12px;font-weight:700}.message{border-left:10px solid var(--team-primary,#8995a3)}.meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);align-items:start;column-gap:10px;row-gap:8px}.meta>strong{grid-column:1;grid-row:1;min-width:0;overflow-wrap:anywhere}.meta .team-tag{grid-column:2;grid-row:1;justify-self:end;max-width:100%;min-width:0;text-align:right;white-space:normal;overflow-wrap:anywhere}.meta .time{grid-column:1 / -1;grid-row:2;justify-self:end;text-align:right}.team-tag{display:inline-block;border-left:4px solid var(--team-primary);border-bottom:3px solid var(--team-secondary);padding:2px 6px;background:#f1f3f5;color:#1b2936;font-size:11px;font-weight:800;letter-spacing:.04em;border-radius:3px}.comment-jump{display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}.comment-jump a{color:#243d58;font-weight:700;text-decoration:underline;text-underline-offset:3px}.comment-jump a:hover{color:#0c5b8b}.comment-tools{justify-content:space-between}.comment-tools button{background:#364b60;padding:10px 14px;font-size:14px}.comment-tools button:hover{background:#263c53}.refresh-feedback{color:#586575;font-size:12px;flex:1 1 110px}.join-conversation-heading{font-size:23px;margin:5px 0 14px}.message:last-child{scroll-margin-top:16px}#messages{max-height:65vh;max-height:min(65dvh,680px);min-height:170px;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;overflow-anchor:none;border:1px solid #dce2e8;border-radius:12px;background:#f8fafc;padding:0 12px 12px}#messages:focus-visible{outline:3px solid #145ca8;outline-offset:3px}#discussion-heading{scroll-margin-top:12px}.footer-links a{color:#405a75}
+
+/* Shared glossy 3D navigation buttons. The active state follows the finger/mouse
+   and releases immediately on navigation; no JavaScript or navigation delay. */
+.lfl-nav-cta {
+  border: 1px solid transparent;
+  white-space: nowrap;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 100ms ease, box-shadow 100ms ease, filter 100ms ease;
+}
+.lfl-nav-cta--red {
+  background-color: #c1121f;
+  background-image: linear-gradient(180deg, #e4474f 0%, #c1121f 48%, #a20d18 100%);
+  border-color: #8d101a;
+  box-shadow: inset 0 2px 1px #ffffff70, inset 0 -2px 2px #65000050, 0 5px 12px #00000040;
+}
+.lfl-nav-cta--green {
+  background-color: #83d49a;
+  background-image: linear-gradient(180deg, #baf0c9 0%, #83d49a 48%, #65b67f 100%);
+  border-color: #458f5d;
+  box-shadow: inset 0 2px 1px #ffffff99, inset 0 -2px 2px #215b3840, 0 5px 12px #00000040;
+}
+.lfl-nav-cta:hover { filter: brightness(1.04); }
+.lfl-nav-cta:focus-visible { outline: 3px solid #145ca8; outline-offset: 3px; }
+.lfl-nav-cta:active {
+  transform: translateY(3px);
+  filter: brightness(.97);
+  box-shadow: inset 0 3px 5px #00000038, inset 0 -1px 0 #ffffff50, 0 1px 2px #00000026;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lfl-nav-cta { transition: none; }
+}
+@media (forced-colors: active) {
+  .lfl-nav-cta { border-color: ButtonText; box-shadow: none; }
+  .lfl-nav-cta:active { outline: 2px solid Highlight; }
+}
 </style></head><body><main class="wrap"><header class="hero"><small>LOSER FOOTBALL LEAGUE • 2026</small><h1>🏈 Loser's Locker Room</h1><p>Where every loss is somebody else's entertainment.</p><strong class="tag">MEMBERS ONLY</strong></header>
 <nav aria-label="League websites" style="margin:0 0 18px;text-align:center">
-  <a href="https://whadayalookinat.github.io/lfl-site/" style="display:inline-block;box-sizing:border-box;width:260px;max-width:100%;padding:14px 8px;font-size:15px;border-radius:8px;background:#83d49a;color:#000;font-weight:700;text-align:center;text-decoration:none">📊 Return to LFL Standings</a>
+  <a class="lfl-nav-cta lfl-nav-cta--green" href="https://whadayalookinat.github.io/lfl-site/" style="display:inline-block;box-sizing:border-box;width:260px;max-width:100%;padding:14px 8px;font-size:15px;border-radius:8px;color:#000;font-weight:700;text-align:center;text-decoration:none">📊 Return to LFL Standings</a>
 </nav>
 <section class="panel"><div id="status" class="status" role="status" aria-live="polite">Checking your session…</div>
 <div id="login-view" class="hidden"><h2>Welcome to the Locker Room</h2><p class="intro">Members only. Sign in to talk football, follow the weekly conversation, and celebrate someone else's bad Sunday.</p><form id="login-form"><label for="username">Username</label><input id="username" autocomplete="username" autocapitalize="none" maxlength="30" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><div class="actions"><span>Need access? Contact your league commissioner.</span><button id="login-button" type="submit">Sign in</button></div></form></div>
