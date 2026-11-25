@@ -32,3 +32,62 @@ button:disabled { cursor: default; box-shadow: none; }
   button:hover:not(:disabled) { background-image: none; }
   button:active:not(:disabled) { outline: 2px solid Highlight; }
 }
+
+/* Color-preserving button variants; specificity also protects them from older
+   page-local solid-background declarations and hover rules. */
+body button.danger {
+  --gloss-top: #8d98a5;
+  --gloss-mid: #5d6975;
+  --gloss-bottom: #47535f;
+  --gloss-border: #424e59;
+  background-image: linear-gradient(180deg, var(--gloss-top), var(--gloss-mid) 49%, var(--gloss-bottom));
+}
+body .comment-tools button,
+body .comment-tools button:hover:not(:disabled),
+body .tabs button {
+  --gloss-top: #56718b;
+  --gloss-mid: #364b60;
+  --gloss-bottom: #263c53;
+  --gloss-border: #243749;
+  border-color: var(--gloss-border);
+  background-image: linear-gradient(180deg, var(--gloss-top), var(--gloss-mid) 49%, var(--gloss-bottom));
+}
+body .tabs button[aria-selected="true"] {
+  --gloss-top: #df4553;
+  --gloss-mid: #b51d2b;
+  --gloss-bottom: #921623;
+  --gloss-border: #80131d;
+  border-color: var(--gloss-border);
+  background-image: linear-gradient(180deg, var(--gloss-top), var(--gloss-mid) 49%, var(--gloss-bottom));
+}
+/* Commissioner navigation tiles are already visually buttons, unlike the
+   small text navigation links. Give only these tiles a raised treatment. */
+body .console-nav a {
+  border: 1px solid #1b2f41;
+  background-color: #263c53;
+  background-image: linear-gradient(180deg, #526e87, #263c53 49%, #182d40);
+  box-shadow: inset 0 2px 1px #ffffff55, inset 0 -2px 2px #111e2a50, 0 5px 12px #00000035;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 100ms ease, box-shadow 100ms ease, filter 100ms ease;
+}
+body .console-nav a:hover,
+body .console-nav a:focus-visible {
+  background-image: linear-gradient(180deg, #526e87, #263c53 49%, #182d40);
+  filter: brightness(1.04);
+}
+body .console-nav a:active {
+  transform: translateY(3px);
+  filter: brightness(.97);
+  box-shadow: inset 0 3px 5px #00000038, 0 1px 2px #00000026;
+}
+@media (prefers-reduced-motion: reduce) {
+  body .console-nav a { transition: none; }
+}
+@media (forced-colors: active) {
+  body .console-nav a { background-image: none; box-shadow: none; border-color: LinkText; }
+  body .console-nav a:active { outline: 2px solid Highlight; }
+  body .comment-tools button, body .tabs button, body .tabs button[aria-selected="true"] {
+    background-image: none;
+  }
+}
