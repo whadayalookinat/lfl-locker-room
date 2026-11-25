@@ -1,1 +1,34 @@
 :root{font-family:Arial,Helvetica,sans-serif;background:#f3f5f8;color:#1d2935}*{box-sizing:border-box}body{margin:0}.wrap{max-width:860px;margin:auto;padding:24px 16px 50px}.hero{background:#202c3a;color:#fff;border-radius:16px;padding:30px;margin-bottom:18px}.hero small{letter-spacing:2px;color:#ffb7ba;font-weight:700}.hero h1{font-size:clamp(28px,5vw,40px);margin:12px 0}.hero p{color:#d7dee8}.tag{display:inline-block;background:#394b60;padding:8px 10px;border-radius:6px;font-size:11px;letter-spacing:1px}.panel{background:#fff;border:1px solid #dce2e8;border-radius:14px;padding:24px;margin-bottom:18px}.heading{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}h2{font-size:23px;margin:5px 0 14px}.hint{font-size:13px;color:#687584;line-height:1.5}label{display:block;margin:14px 0 7px;font-weight:700;font-size:13px}input,textarea,select{font:inherit;border:1px solid #bdc8d4;border-radius:8px;padding:11px;background:#fff;color:#1d2935}input,textarea{display:block;width:100%}textarea{resize:vertical}.actions{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-top:16px}.actions span{font-size:12px;color:#687584}button{border:0;border-radius:8px;background:#b51d2b;color:#fff;padding:12px 18px;font-weight:700;cursor:pointer}button:hover{background:#8f1521}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #ffb7ba;outline-offset:2px}.message{border:1px solid #e1e6ed;background:#fbfcfd;border-radius:12px;padding:16px;margin-top:12px}.meta{display:flex;justify-content:space-between;align-items:center;gap:10px}.author{font-weight:700}.avatar{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#ffe8e9;color:#9e1822;margin-right:9px}.time{color:#778391;font-size:12px}.message p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;margin:12px 0 0}.empty{padding:24px;text-align:center;color:#687584}footer{text-align:center;color:#697584;font-size:12px}@media(max-width:500px){.wrap{padding:12px 10px 35px}.hero,.panel{padding:19px}.message{padding:12px}}
+
+/* Glossy beveled treatment for real buttons on Locker Room pages, including
+   dynamically created commissioner Save buttons. Plain hyperlinks are untouched. */
+button {
+  --gloss-top: #e4474f;
+  --gloss-mid: #b51d2b;
+  --gloss-bottom: #931521;
+  --gloss-border: #8d101a;
+  border: 1px solid var(--gloss-border);
+  background-image: linear-gradient(180deg, var(--gloss-top) 0%, var(--gloss-mid) 49%, var(--gloss-bottom) 100%);
+  box-shadow: inset 0 2px 1px #ffffff70, inset 0 -2px 2px #65000035, 0 5px 12px #00000035;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 100ms ease, box-shadow 100ms ease, filter 100ms ease;
+}
+button:hover:not(:disabled) {
+  background-image: linear-gradient(180deg, var(--gloss-top) 0%, var(--gloss-mid) 49%, var(--gloss-bottom) 100%);
+  filter: brightness(1.04);
+}
+button:active:not(:disabled) {
+  transform: translateY(3px);
+  filter: brightness(.97);
+  box-shadow: inset 0 3px 5px #00000038, inset 0 -1px 0 #ffffff50, 0 1px 2px #00000026;
+}
+button:disabled { cursor: default; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none; }
+}
+@media (forced-colors: active) {
+  button { background-image: none; box-shadow: none; border-color: ButtonText; }
+  button:hover:not(:disabled) { background-image: none; }
+  button:active:not(:disabled) { outline: 2px solid Highlight; }
+}
